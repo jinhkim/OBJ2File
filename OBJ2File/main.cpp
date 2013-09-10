@@ -1,9 +1,7 @@
 /*****************************************************************
-*							OBJ2File
+*	OBJ2File   By Jin Kim
 *
-* Converts any OBJ file into a suitable XML resource for android
-*
-*							By Jin Kim
+*   Converts any OBJ file into a suitable XML resource for android
 *
 *	Takes three (3) arguments: output XML files for vertex, normal, 
 *	and texture arrays.
