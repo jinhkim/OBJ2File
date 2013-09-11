@@ -1,10 +1,14 @@
 /*****************************************************************
-*	OBJ2File   By Jin Kim
+*   OBJ2File   By Jin Kim     updated September 11, 2013
 *
 *   Converts any OBJ file into a suitable XML resource for android
 *
-*	Takes three (3) arguments: output XML files for vertex, normal, 
-*	and texture arrays.
+*   Argument: takes one input cfg file with the following 4 entries: 
+*   - OBJ file to parse
+*   output XML files for:
+*   - vertex array
+*   - normal array 
+*   - texture array
 *
 ******************************************************************/
 
@@ -19,7 +23,7 @@
 int main(int argc, char *argv[]){
 
 	std::string filename;
-	std::ifstream objFile;
+	std::ifstream configFile, objFile;
 	std::ofstream vertFile, texFile, normFile;
 	std::vector<std::vector<float> > verts;
 	std::vector<std::vector<float> > tex;
@@ -27,38 +31,102 @@ int main(int argc, char *argv[]){
 	std::vector<int> finalVerts;
 	std::vector<int> finalTex;
 	std::vector<int> finalNormals;
+	std::vector<std::string> configv;
 
-	char buffer[256];
+	char cBuffer[256], buffer[256];
 	char *charBuffer;
 
 	int vertCount = 0, normCount = 0, texCount = 0, faceCount = 0;
+	int size = 0;
 
-	if(argc < 4){
-		std::cout << "not enough arguments!\r\n\r\nRequires at least 3 arguments:" << std::endl;
+	//if no arguments on program execution
+	if(argc < 2) {
+		std::cout << "Requires input config file" << std::endl;
+		system("pause");
+	}
+	else if(argc > 2) {
+		std::cout << "Too many arguments" << std::endl;
+		system("pause");
+	}
+	else {
+		configFile.open(argv[1]);
+
+		if(configFile.bad() || configFile.fail()){
+			std::cout << "file opening error! Better check that the filename is correct" << std::endl;
+			system("pause");
+		}
+
+		configv.resize(4);
+
+		while(configFile.good()){
+			int c;
+			configFile.getline(cBuffer, 256);
+			std::string strBuffer = std::string(cBuffer);
+
+			if(strBuffer.substr(0, 8) == "OBJFile=") {
+				configv[0] = strBuffer.substr(8);
+				size = (configv[0].size() > 0) ? (size+1) : size;
+				continue;
+			}
+
+			else if(strBuffer.substr(0, 10) == "vertArray=") {
+				configv[1] = strBuffer.substr(10);
+				size = (configv[1].size() > 0) ? (size+1) : size;
+				continue;
+			}
+
+			else if(strBuffer.substr(0, 10) == "normArray=") {
+				configv[2] = strBuffer.substr(10);
+				size = (configv[2].size() > 0) ? (size+1) : size;
+				continue;
+			}
+
+			else if(strBuffer.substr(0, 9) == "texArray=") {
+				configv[3] = strBuffer.substr(9);
+				size = (configv[3].size() > 0) ? (size+1) : size;
+				continue;
+			}
+			
+		}
+	
+	}
+
+	if(size < 4){
+		std::cout << "not enough arguments in config file!\r\n\r\nRequires 4 arguments:" << std::endl;
+
+		std::cout << "- OBJ file...";
+		if(configv[0].size() > 0)
+			std::cout << "OK" << std::endl;
+		else
+			std::cout<< "MISSING" << std::endl;
 
 		std::cout << "- vertex array filename...";
-		if(argc < 2)
-			std::cout<< "MISSING" << std::endl;
-		else
+		if(configv[1].size() > 0)
 			std::cout << "OK" << std::endl;
+		else
+			std::cout<< "MISSING" << std::endl;
 
 		std::cout << "- normal array filename...";
-		if(argc < 3)
-			std::cout << "MISSING" << std::endl;
-		else
+		if(configv[2].size() > 0)
 			std::cout << "OK" << std::endl;
-		
-		std::cout << "- texture array filename...MISSING\r\n" << std::endl;
+		else
+			std::cout << "MISSING" << std::endl;
+
+		std::cout << "- texture array filename...";
+		if(configv[3].size() > 0)
+			std::cout << "OK" << std::endl;
+		else
+			std::cout << "MISSING\r\n" << std::endl;
 
 		system("pause");
 	}
 	else{
 		
-		std::string vertArrayName = argv[1];
-		std::string normArrayName = argv[2];
-		std::string texArrayName = argv[3];
+		std::string vertArrayName = configv[1];
+		std::string normArrayName = configv[2];
+		std::string texArrayName = configv[3];
 
-		objFile.open("monkey_normals.obj");
+		objFile.open(configv[0]);
 
 		if(objFile.bad() || objFile.fail()){
 			std::cout << "file opening error! Better check that the filename is correct" << std::endl;
@@ -66,9 +134,9 @@ int main(int argc, char *argv[]){
 			//exit(-1);
 		}
 
-		vertFile.open("vertex_array.xml", std::ofstream::out);
-		texFile.open("texture_array.xml", std::ofstream::out);
-		normFile.open("normal_array.xml", std::ofstream::out);
+		vertFile.open(vertArrayName, std::ofstream::out);
+		texFile.open(texArrayName, std::ofstream::out);
+		normFile.open(normArrayName, std::ofstream::out);
 
 		if(vertFile.fail() || texFile.fail() || normFile.fail()){
 			std::cout << "Couldn't open output file! Exiting." << std::endl;
@@ -173,7 +241,7 @@ int main(int argc, char *argv[]){
 		}
 
 		//output vertex array
-		std::cout << "Output to " << argv[1] << "...";
+		std::cout << "Output to " << configv[1] << "...";
 		vertFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>" << std::endl;
 		vertFile << "<resources>" << std::endl;
 		vertFile << "<integer-array name=\"" << vertArrayName << "\">" << std::endl;
@@ -186,7 +254,7 @@ int main(int argc, char *argv[]){
 		std::cout << "Done." << std::endl;
 		
 		//output normal array
-		std::cout << "\r\nOutput to " << argv[2] << "...";
+		std::cout << "\r\nOutput to " << configv[2] << "...";
 		normFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>" << std::endl;
 		normFile << "<resources>" << std::endl;
 		if(finalNormals.size() > 0){
@@ -201,7 +269,7 @@ int main(int argc, char *argv[]){
 		std::cout << "Done." << std::endl;
 
 		//output texture coordinate array
-		std::cout << "\r\nOutput to " << argv[3] << "...";
+		std::cout << "\r\nOutput to " << configv[3] << "...";
 		texFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>" << std::endl;
 		texFile << "<resources>" << std::endl;
 		if(finalTex.size() > 0){
